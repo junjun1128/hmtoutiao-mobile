@@ -3,6 +3,13 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 
+// 完整导入vant  将来上线优化按需导入
+import Vant from 'vant'
+import 'vant/lib/index.css'
+
+import 'amfe-flexible'
+Vue.use(Vant)
+
 Vue.config.productionTip = false
 
 new Vue({
