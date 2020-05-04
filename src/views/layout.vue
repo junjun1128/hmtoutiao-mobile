@@ -11,7 +11,10 @@
      right-text="搜索"
      @click-right="$router.push('/search')" />
      <div class="my-wrapper" :class="{noTop:path==='/user'}">
-       <router-view></router-view>
+       <keep-alive>
+        <router-view v-if="$route.meta.keepAlive"></router-view>
+      </keep-alive>
+      <router-view v-if="!$route.meta.keepAlive"></router-view>
      </div>
     <!-- 底部导航 -->
     <van-tabbar route>
