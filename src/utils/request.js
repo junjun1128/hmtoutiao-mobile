@@ -1,7 +1,7 @@
 // 基于配置好的axios  提供一个调用接口函数
 // 先装包
 import axios from 'axios'
-import JSONBIG from 'json-bigint'
+import JSONBIG from 'json-bigint' // 转换后的数据是对象
 import store from '@/store'
 import router from '@/router'
 
@@ -49,7 +49,21 @@ instance.interceptors.response.use(res => {
     if (!user.token || !user.refresh_token) {
       // 去登录
       router.push(login)
-      return
+      // 没有登录的时候,是不能关注的,点击"+关注"会拦截到登录页(就是在这拦截的),已经拦截到登录页了,但还是提示关注成功
+      // 老师解释如下:
+      // return false // 这样拦截到登录的时候,代码已经执行完了,即点关注拦截到登录还是会提示关注成功
+      // 下面这句代码是axios约定如果出现错误,应该返回的内容,即应该返回一个promise的错误调用,才能处理错误
+      // 但是return false的话,在拦截到登录的时候,返回的是false,返回false只能阻碍程序运行,也会把false返回出去,
+      // axios并不会处理错误,也不会抛出错误,所以就无法阻碍程序运行,所以应该return Promise.reject(err)   这个版本听不懂
+
+      // 群里大佬的解释加上自己的理解,解释为:
+      // 1.拦截是在axios的拦截器里拦截的,axios本来就是一个promise,这个promise执行是会执行这个拦截器里面的代码.
+      // 如果用return false的话,是结束不了这个promise,代码继续执行,因为要结束promise只能把状态改变为resolve或者reject,
+      // 不然就得等代码执行完
+      // 2.点击关注按钮,会发送"+关注"的请求,但是被响应拦截器发现没有登录,所以拦截到了登录页,如果用return false,
+      // 这个promise结束不了,所以代码会往下执行,接着执行"+关注"的请求,如果用return Promise.reject(err),拦截器拦截到登录
+      // 页的时候,这个promise就结束了,跳到登录页,代码就不会往下执行了,就不会继续"+关注"的请求了
+      return Promise.reject(err)
     }
     try {
       // 3.(axios实例)发刷新token的请求  instance在头部携带的是token,已经配置完毕,如果用instance
@@ -75,8 +89,11 @@ instance.interceptors.response.use(res => {
       // 删除vuex和本地token
       store.commit('delUser')
       router.push(login)
+      // 这里也要加这句代码  出现错误,跳去登录了,也要阻碍程序运行
+      return Promise.reject(err)
     }
   }
+  // 这句代码是axios约定如果出现错误,应该返回的内容,即应该返回一个promise的错误调用,才能处理错误
   return Promise.reject(err)
 })
 
